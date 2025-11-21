@@ -14,6 +14,8 @@ export default function ListingDetailPage() {
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [activeTab, setActiveTab] = useState("marketing");
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedContent, setEditedContent] = useState<any>(null);
 
     useEffect(() => {
         async function fetchListing() {
@@ -59,6 +61,33 @@ export default function ListingDetailPage() {
         }
     };
 
+    const handleEdit = () => {
+        setIsEditing(true);
+        setEditedContent(listing?.generatedContent);
+    };
+
+    const handleSave = async () => {
+        if (!listing || !editedContent) return;
+        try {
+            await updateListing(listing.id, {
+                generatedContent: editedContent
+            });
+            setListing({
+                ...listing,
+                generatedContent: editedContent
+            });
+            setIsEditing(false);
+        } catch (error) {
+            console.error("Save failed", error);
+            alert("Failed to save changes.");
+        }
+    };
+
+    const handleCancel = () => {
+        setIsEditing(false);
+        setEditedContent(null);
+    };
+
     if (loading) return <div className={styles.loading}>Loading listing...</div>;
     if (!listing) return <div className={styles.error}>Listing not found</div>;
 
@@ -81,11 +110,26 @@ export default function ListingDetailPage() {
                             <Wand2 size={18} style={{ marginRight: "0.5rem" }} />
                             {generating ? "Generating Magic..." : "Generate Launch Package"}
                         </button>
+                    ) : isEditing ? (
+                        <>
+                            <button onClick={handleCancel} className="btn btn-outline">
+                                Cancel
+                            </button>
+                            <button onClick={handleSave} className="btn btn-primary">
+                                <Check size={18} style={{ marginRight: "0.5rem" }} />
+                                Save Changes
+                            </button>
+                        </>
                     ) : (
-                        <button className="btn btn-outline">
-                            <Share2 size={18} style={{ marginRight: "0.5rem" }} />
-                            Share Package
-                        </button>
+                        <>
+                            <button onClick={handleEdit} className="btn btn-outline">
+                                Edit Content
+                            </button>
+                            <button className="btn btn-outline">
+                                <Share2 size={18} style={{ marginRight: "0.5rem" }} />
+                                Share Package
+                            </button>
+                        </>
                     )}
                 </div>
             </header>
@@ -118,10 +162,24 @@ export default function ListingDetailPage() {
                             <div className={styles.section}>
                                 <h3 className={styles.sectionTitle}>MLS Description</h3>
                                 <div className={styles.copyBox}>
-                                    <p>{listing.generatedContent.mlsDescription}</p>
-                                    <button className={styles.copyBtn} onClick={() => navigator.clipboard.writeText(listing.generatedContent!.mlsDescription)}>
-                                        <Copy size={16} />
-                                    </button>
+                                    {isEditing ? (
+                                        <textarea
+                                            className="input"
+                                            rows={8}
+                                            value={editedContent?.mlsDescription || ''}
+                                            onChange={(e) => setEditedContent({
+                                                ...editedContent,
+                                                mlsDescription: e.target.value
+                                            })}
+                                        />
+                                    ) : (
+                                        <>
+                                            <p>{listing.generatedContent.mlsDescription}</p>
+                                            <button className={styles.copyBtn} onClick={() => navigator.clipboard.writeText(listing.generatedContent!.mlsDescription)}>
+                                                <Copy size={16} />
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -131,24 +189,74 @@ export default function ListingDetailPage() {
                                 <div className={styles.card}>
                                     <h3 className={styles.cardTitle}>Instagram</h3>
                                     <div className={styles.copyBox}>
-                                        <p>{listing.generatedContent.socialPosts.instagram.caption}</p>
-                                        <div className={styles.hashtags}>
-                                            {listing.generatedContent.socialPosts.instagram.hashtags.map(tag => (
-                                                <span key={tag} className={styles.hashtag}>{tag}</span>
-                                            ))}
-                                        </div>
+                                        {isEditing ? (
+                                            <textarea
+                                                className="input"
+                                                rows={5}
+                                                value={editedContent?.socialPosts?.instagram?.caption || ''}
+                                                onChange={(e) => setEditedContent({
+                                                    ...editedContent,
+                                                    socialPosts: {
+                                                        ...editedContent.socialPosts,
+                                                        instagram: {
+                                                            ...editedContent.socialPosts.instagram,
+                                                            caption: e.target.value
+                                                        }
+                                                    }
+                                                })}
+                                            />
+                                        ) : (
+                                            <>
+                                                <p>{listing.generatedContent.socialPosts.instagram.caption}</p>
+                                                <div className={styles.hashtags}>
+                                                    {listing.generatedContent.socialPosts.instagram.hashtags.map(tag => (
+                                                        <span key={tag} className={styles.hashtag}>{tag}</span>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                                 <div className={styles.card}>
                                     <h3 className={styles.cardTitle}>Facebook</h3>
                                     <div className={styles.copyBox}>
-                                        <p>{listing.generatedContent.socialPosts.facebook}</p>
+                                        {isEditing ? (
+                                            <textarea
+                                                className="input"
+                                                rows={5}
+                                                value={editedContent?.socialPosts?.facebook || ''}
+                                                onChange={(e) => setEditedContent({
+                                                    ...editedContent,
+                                                    socialPosts: {
+                                                        ...editedContent.socialPosts,
+                                                        facebook: e.target.value
+                                                    }
+                                                })}
+                                            />
+                                        ) : (
+                                            <p>{listing.generatedContent.socialPosts.facebook}</p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className={styles.card}>
                                     <h3 className={styles.cardTitle}>LinkedIn</h3>
                                     <div className={styles.copyBox}>
-                                        <p>{listing.generatedContent.socialPosts.linkedin}</p>
+                                        {isEditing ? (
+                                            <textarea
+                                                className="input"
+                                                rows={5}
+                                                value={editedContent?.socialPosts?.linkedin || ''}
+                                                onChange={(e) => setEditedContent({
+                                                    ...editedContent,
+                                                    socialPosts: {
+                                                        ...editedContent.socialPosts,
+                                                        linkedin: e.target.value
+                                                    }
+                                                })}
+                                            />
+                                        ) : (
+                                            <p>{listing.generatedContent.socialPosts.linkedin}</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
